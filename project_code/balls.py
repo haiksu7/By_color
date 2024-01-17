@@ -3,6 +3,7 @@ import sys
 import os
 
 
+# Обработка изображений
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     if not os.path.isfile(fullname):
@@ -19,6 +20,7 @@ def load_image(name, colorkey=None):
     return image
 
 
+# Создание шаров
 class Balls(pygame.sprite.Sprite):
     def __init__(self, x, speed, surf, ind, group):
         pygame.sprite.Sprite.__init__(self)

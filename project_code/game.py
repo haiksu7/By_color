@@ -1,143 +1,66 @@
-from random import randint
+from random import randint, choice
 import pygame
 import sqlite3
-from PyQt5.QtWidgets import QDialog, QTableWidget, QHBoxLayout, QTableWidgetItem
-from PyQt5.QtCore import Qt
 from project_code.balls import Balls, load_image
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QWidget, QPushButton, QMessageBox
+from PyQt5.QtWidgets import QPushButton
 from PyQt5.QtWidgets import QDialog, QLabel
-from Checking import Checking
+from project_code.Checking import Checking
+from project_code.show_table import Show_Table
 FPS = 40
+N = 100
 lvl = []
 result = []
 
 
-class StartWindow(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.initUI()
-
-    def initUI(self):
-        self.setGeometry(600, 300, 700, 500)
-        self.setWindowTitle('По цвету')
-
-        self.pixmap = QPixmap('data\фонстарт.png')
-        self.image = QLabel(self)
-        self.image.move(0, -35)
-        self.image.setPixmap(self.pixmap)
-
-        self.head = QLabel(self)
-        self.head.setText('--По цвету--')
-        self.head.move(300, 50)
-
-        self.question = QLabel(self)
-        self.question.setText('Выберите уровень:')
-        self.question.move(200, 120)
-
-        self.button_1 = QPushButton(self)
-        self.button_1.move(100, 200)
-        self.button_1.setText("Легко")
-        self.button_1.clicked.connect(self.run1)
-
-        self.button_2 = QPushButton(self)
-        self.button_2.move(300, 200)
-        self.button_2.setText("Нормально")
-        self.button_2.clicked.connect(self.run1)
-
-        self.button_3 = QPushButton(self)
-        self.button_3.move(500, 200)
-        self.button_3.setText("Сложно")
-        self.button_3.clicked.connect(self.run1)
-
-        self.instruction = QPushButton(self)
-        self.instruction.move(300, 400)
-        self.instruction.setText("Инструкция")
-        self.instruction.clicked.connect(self.get_instruction)
-
-        self.text = QLabel(self)
-        self.text.move(275, 310)
-        self.text.setText("★Наполни мир красками!★")
-
-        self.music()
-
-    def music(self):
-        pygame.init()
-        pygame.mixer.music.load("data\Infinitely_Gray_Instrumental_N25.mp3")
-        pygame.mixer.music.play(-1)
-
-    def run1(self):
-        self.a = self.sender().text()
-        lvl.append(self.a)
-        player = Game()
-
-    def get_instruction(self):
-        get = Instruction()
-        get.exec_()
-
-
-class Instruction(QDialog):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Инструкция")
-        self.setGeometry(650, 400, 630, 300)
-
-        self.pixmap = QPixmap('data\Инструкцияфон.png')
-        self.image = QLabel(self)
-        self.image.move(0, -35)
-        self.image.setPixmap(self.pixmap)
-
-        self.instruction = QLabel(self)
-        self.instruction.setText('                                       ★Инструкция★' + '\n' + '\n'+ '\n'
-                                 '●По цвету - аркадная игра, где игрок управляет ведром определённого цвета,' + '\n'
-                                 'двигая его вправо или влево с помощью стрелочек на клавиатуре.' + '\n'+ '\n'
-                                 '●Цель - собирать падающие шарики такого же цвета, как и ведро, не ошибаясь' + '\n'
-                                 'и получая очки за каждый правильно пойманный шарик.' + '\n'+ '\n'
-                                 '●Игра заканчивается при ошибочно пойманном шарике')
-        self.instruction.move(20, 50)
-
-
+# Создание игры
 class Game(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
+        pygame.font.init()
         self.size = self.width, self.height = 1000, 800
         self.screen = pygame.display.set_mode(self.size)
         pygame.display.set_caption("По цвету")
-        self.screen.fill((255, 255, 255))
         self.clock = pygame.time.Clock()
         self.score = 0
-       # self.f = pygame.font.Font("arial", 30)
+        self.f = pygame.font.SysFont("arial", 50)
         self.backround = load_image("empty.png")
         self.lvl = lvl[-1]
-        self.ok = Checking.lvl(self, lvl)
+
+        # Условия уровня
+        self.values = Checking.lvl(self, lvl)
         self.indexes = [1, 2, 3, 4, 5, 6, 7, 8]
-        self.players = [load_image(filename, (0, 0, 0)) for filename in self.ok[0]]
+        self.players = [load_image(filename, (0, 0, 0)) for filename in self.values[0]]
         self.player = self.create_bucket()
         self.player_rect = self.player.get_rect(centerx=430, bottom=self.height - 20)
 
-        pygame.time.set_timer(pygame.USEREVENT, self.ok[4])
+        pygame.time.set_timer(pygame.USEREVENT, self.values[4])
         self.all_balls = pygame.sprite.Group()
-        self.balls_images = self.ok[1]
+        self.balls_images = self.values[1]
         self.balls_serf = [load_image(filename["filename"], (0, 0, 0)) for filename in self.balls_images]
 
-        self.speed = self.ok[3]
+        self.speed = self.values[3]
 
         self.run_game()
 
+    # Создание ведра
     def create_bucket(self):
         ind = randint(0, len(self.players) - 1)
         self.bucket_ind = self.indexes[ind]
         return self.players[ind]
 
+    # Создание шариков
     def create_balls(self, group):
         ind = randint(0, len(self.balls_serf) - 1)
         x = randint(20, self.width - 20)
-        speed = self.ok[2]
+        speed = self.values[2]
         self.ball_ind = self.indexes[ind]
         return Balls(x, speed, self.balls_serf[ind], self.balls_images[ind]['ind'], group)
 
+    # Проверка столкновений
     def collide(self):
         pygame.mixer.pre_init(44100, -16, 1, 512)
+        pygame.font.init()
         pygame.init()
         for ball in self.all_balls:
             if self.player_rect.collidepoint(ball.rect.center):
@@ -148,18 +71,22 @@ class Game(pygame.sprite.Sprite):
                     if self.counter == self.flag:
                         self.player = self.create_bucket()
                         self.counter = 0
+                        self.flag = choice(self.values[-1])
                 else:
                     self.game_over()
                 ball.kill()
 
+    # Запуск игры
     def run_game(self):
         pygame.init()
+        pygame.font.init()
         pygame.mixer.music.load("data\empty_sekai.mp3")
         pygame.mixer.music.play(-1)
         self.running = True
+        self.gameover = False
         to_left = False
         to_right = False
-        self.flag = self.ok[-1]
+        self.flag = choice(self.values[-1])
         self.counter = 0
         while self.running:
             for event in pygame.event.get():
@@ -183,8 +110,8 @@ class Game(pygame.sprite.Sprite):
                     if event.type == pygame.QUIT:
                         self.running = False
             if to_right:
-                if self.player_rect.x > self.width - 100:
-                    self.player_rect.x = self.width - 100
+                if self.player_rect.x > self.width - N:
+                    self.player_rect.x = self.width - N
                 else:
                     self.player_rect.x += self.speed
             if to_left:
@@ -192,68 +119,80 @@ class Game(pygame.sprite.Sprite):
                     self.player_rect.x = 0
                 else:
                     self.player_rect.x -= self.speed
+
             self.collide()
             self.screen.blit(self.backround, (0, 0))
             self.all_balls.draw(self.screen)
             self.screen.blit(self.player, self.player_rect)
-            pygame.display.flip()
+            self.scoretxt = self.f.render("Счёт: " + str(self.score), True, (0, 0, 0))
+            self.screen.blit(self.scoretxt, (20, 10))
             pygame.display.update()
             self.clock.tick(FPS)
             self.all_balls.update(self.height)
-           # scoretxt = self.f.render(str(self.score), True, (0, 0, 0))
-           # self.screen.blit(scoretxt, (20, 10))
+            pygame.display.flip()
+        pygame.display.quit()
         pygame.quit()
+        if self.gameover:
+            self.gameover = False
+            GameOver().exec_()
 
     def game_over(self):
         self.running = False
-        self.all_balls = []
+        self.all_balls = pygame.sprite.Group()
+
         result.append((self.lvl, self.score))
-        pygame.quit()
-        GameOver().exec_()
+        self.gameover = True
 
 
+# Проигрыш
 class GameOver(QDialog):
     def __init__(self):
         super().__init__()
 
-        self.setGeometry(400, 200, 1000, 800)
+        self.setGeometry(650, 300, 500, 500)
         self.setWindowTitle('Конец игры')
 
+        self.music()
+        self.the_best_last()
         self.base_add()
-        self.the_best()
+        self.the_best_new()
 
-        self.pixmap = QPixmap('data\Инструкцияфон.png')
+        self.pixmap = QPixmap('data\Проигрыш.png')
         self.image = QLabel(self)
-        self.image.move(0, -35)
+        self.image.move(0, -150)
         self.image.setPixmap(self.pixmap)
 
         self.head = QLabel(self)
         self.head.setText('--Вы ошиблись--')
-        self.head.move(300, 50)
+        self.head.move(130, 50)
 
         self.question = QLabel(self)
         self.question.setText('Ваши очки: ' + str(result[-1][1]))
-        self.question.move(200, 120)
+        self.question.move(100, 110)
 
         self.bestres = QLabel(self)
-        self.bestres.setText('Ваш лучший результат на этом уровне: ' + str(self.best))
-        self.bestres.move(150, 140)
+        self.bestres.setText('Ваш лучший результат на этом уровне: ' + str(self.best_new))
+        self.bestres.move(50, 140)
+
+        if self.best_last < self.best_new:
+            self.record = QLabel(self)
+            self.record.setText('Рекорд!!')
+            self.record.move(370, 150)
 
         self.again = QPushButton(self)
-        self.again.move(300, 400)
+        self.again.move(140, 180)
         self.again.setText("Заново?")
         self.again.clicked.connect(self.rerun)
 
         self.getres = QPushButton(self)
-        self.getres.move(300, 500)
+        self.getres.move(120, 230)
         self.getres.setText("Показать все результаты?")
         self.getres.clicked.connect(self.get_all_results)
-
-        self.music()
 
     def get_all_results(self):
         Show_Table().exec_()
 
+    # Создание/обновления БД
     def base_add(self):
         self.bd = sqlite3.connect("database.db")
         self.cursor = self.bd.cursor()
@@ -265,7 +204,29 @@ class GameOver(QDialog):
         self.cursor.execute(ins, (result[-1][0], result[-1][1]))
         self.bd.commit()
 
-    def the_best(self):
+    # Проверка на рекорд
+    def the_best_last(self):
+        self.bd = sqlite3.connect("database.db")
+        self.cursor = self.bd.cursor()
+        self.cursor.execute("""CREATE TABLE IF NOT EXISTS [Все игры] (Уровень TEXT,
+                            Очки INT)""")
+        ress = self.cursor.execute("""SELECT * FROM [Все игры]""").fetchall()
+        res = []
+        if ress:
+            for el in ress:
+                if el[0] == result[-1][0]:
+                    res.append(el[1])
+            if res:
+                self.best_last = max(res)
+            else:
+                self.best_last = 0
+        else:
+            self.best_last = 0
+            print(6)
+        self.bd.close()
+
+    # Выявление лучшего результата на уровне
+    def the_best_new(self):
         self.bd = sqlite3.connect("database.db")
         self.cursor = self.bd.cursor()
         ress = self.cursor.execute("""SELECT * FROM [Все игры]""").fetchall()
@@ -273,49 +234,14 @@ class GameOver(QDialog):
         for el in ress:
             if el[0] == result[-1][0]:
                 res.append(el[1])
-        self.best = max(res)
+        self.best_new = max(res)
         self.bd.close()
 
     def music(self):
         pygame.init()
-        pygame.mixer.music.load("data\Infinitely_Gray_Instrumental_N25.mp3")
-        pygame.mixer.music.play(-1)
+        pygame.mixer.Sound("data\duolingo_wrong.mp3").play()
 
+    # В случае перезапуска
     def rerun(self):
         self.close()
         player = Game()
-
-
-class Show_Table(QDialog):
-    def __init__(self):
-        super().__init__()
-        self.db = sqlite3.connect('database.db')
-        self.cursor = self.db.cursor()
-        self.resize(230, 230)
-        self.setWindowTitle('Последние действия')
-
-        query = "SELECT * FROM [Все игры]"
-        res = self.cursor.execute(query).fetchall()
-        res.reverse()
-
-        TableWidget = QTableWidget()
-        TableWidget.setRowCount(len(res))
-        TableWidget.setColumnCount(2)
-        TableWidget.move(self.rect().center())
-
-        layout = QHBoxLayout()
-
-        TableWidget.setHorizontalHeaderLabels(['Уровень', 'Очки'])
-
-        QTableWidget.resizeColumnsToContents(TableWidget)
-        QTableWidget.resizeRowsToContents(TableWidget)
-
-        for i, value in enumerate(res):
-            newItem = QTableWidgetItem(str(value[0]))
-            TableWidget.setItem(i, 0, newItem)
-            newItem = QTableWidgetItem(str(value[1]))
-            TableWidget.setItem(i, 1, newItem)
-
-        layout.addWidget(TableWidget)
-
-        self.setLayout(layout)

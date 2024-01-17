@@ -1,4 +1,4 @@
-from project_code.game import StartWindow
+from project_code.start_end_wind import StartWindow
 import sys
 from PyQt5.QtWidgets import QApplication
 
