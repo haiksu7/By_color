@@ -16,17 +16,20 @@ class Best_Results(QDialog):
 
         self.bd = sqlite3.connect("database.db")
         self.cursor = self.bd.cursor()
+        self.cursor.execute("""CREATE TABLE IF NOT EXISTS [Все игры] (Уровень TEXT,
+                                    Очки INT)""")
         ress = self.cursor.execute("""SELECT * FROM [Все игры]""").fetchall()
         res_easy = []
         res_norm = []
         res_hard = []
-        for el in ress:
-            if el[0] == "Легко":
-                res_easy.append(el[1])
-            elif el[0] == "Нормально":
-                res_norm.append(el[1])
-            elif el[0] == "Сложно":
-                res_hard.append(el[1])
+        if ress:
+            for el in ress:
+                if el[0] == "Легко":
+                    res_easy.append(el[1])
+                elif el[0] == "Нормально":
+                    res_norm.append(el[1])
+                elif el[0] == "Сложно":
+                    res_hard.append(el[1])
         self.bd.close()
 
         self.best_easy = QLabel(self)
